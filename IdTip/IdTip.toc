@@ -1,6 +1,8 @@
 ## Interface: 30300
-## Title: SpellID
-## Version: 1.01
-## Notes: Adds SpellIDs to the various tooltips ingame
+## Title: IdTip
+## Version: 2.00
+## Notes: Adds IDs to the various tooltips ingame
 ## Author: Silverwind
 core.lua
+
+##Backported to Wotlk 335 now shows NPC, Quest, Achievement, Achievement Criteria, and ItemID
