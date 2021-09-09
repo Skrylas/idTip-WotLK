@@ -2,18 +2,14 @@ local hooksecurefunc, select, UnitBuff, UnitDebuff, UnitAura, UnitGUID, GetGlyph
       hooksecurefunc, select, UnitBuff, UnitDebuff, UnitAura, UnitGUID, GetGlyphSocketInfo, tonumber, strfind
 
 local types = {
-	spell       = "SpellID:",
-	item        = "ItemID:",
-	enchant 	= "EnchantID",
-	bonus 		= "BonusID",
-	gem 		= "GemID",
-	suffix 		= "SuffixID",
-	unit        = "NPC ID:",
-	quest       = "QuestID:",
-	talent      = "TalentID:",
-	achievement = "AchievementID:",
-	criteria 	= "CriteriaID:",
-	ability     = "AbilityID:",
+    spell       = "SpellID:",
+    item        = "ItemID:",
+    unit        = "NPC ID:",
+    quest       = "QuestID:",
+    talent      = "TalentID:",
+    achievement = "AchievementID:",
+	criteria = "CriteriaID:",
+    ability     = "AbilityID:",
 }
 
 local function addLine(tooltip, id, type)
@@ -84,7 +80,7 @@ GameTooltip:HookScript("OnTooltipSetUnit", function(self)
   local unit = select(2, self:GetUnit())
   if unit then
     local id = tonumber((UnitGUID(unit)):sub(-10, -7), 16)
-    if id ~= 0 then addLine(GameTooltip, id, types.unit) end
+    if id > 0 then addLine(GameTooltip, id, types.unit) end
   end
 end)
 
@@ -103,30 +99,10 @@ local function attachItemTooltip(self)
       end
     end
     if id then
-     addLine(self, id, types.item)
+      addLine(self, id, types.item)
     end
   end
 end
-
--- Displays Enchants, Gems, and Suffixes.  Clutters the tooltip, but can be enabled if one wishes to use it.
---local function attachItemTooltip(self)
---	local link = select(2, self:GetItem())
---	if link then  
---	local _, _, Color, Ltype, Id, Enchant, Gem1, Gem2, Gem3, Gem4, Suffix, Unique, LinkLvl, Name = string.find(link, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
---		addLine(self, Id, types.item)
---		addLine(self, Enchant, types.enchant)
---		addLine(self, Gem1, types.gem)
---		addLine(self, Gem2, types.gem)
---		addLine(self, Gem3, types.gem)
---		addLine(self, Gem4, types.bonus)
---		addLine(self, Suffix, types.suffix)
---	end
---end
-
--- can print itemlinks of items in slot 1 of bags.
---	link = GetContainerItemLink(0, 1);
---	printable = gsub(link, "\124", "\124\124");
---	ChatFrame1:AddMessage("Here's what it really looks like: \"" .. printable .. "\"");
 
 GameTooltip:HookScript("OnTooltipSetItem", attachItemTooltip)
 ItemRefTooltip:HookScript("OnTooltipSetItem", attachItemTooltip)
@@ -190,4 +166,7 @@ local index = GetQuestLogSelection()
 		GameTooltip:SetPoint("TOPLEFT", QuestLogScrollFrame, "TOPRIGHT", 0, 0)
 		addLine(GameTooltip, id, types.quest)
 		GameTooltip:Show()
+    f:HookScript("OnLeave", function()
+      GameTooltip:Hide()
+    end)
 end)
