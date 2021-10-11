@@ -2,14 +2,14 @@ local hooksecurefunc, select, UnitBuff, UnitDebuff, UnitAura, UnitGUID, GetGlyph
       hooksecurefunc, select, UnitBuff, UnitDebuff, UnitAura, UnitGUID, GetGlyphSocketInfo, tonumber, strfind
 
 local types = {
-    spell       = "SpellID:",
-    item        = "ItemID:",
-    unit        = "NPC ID:",
-    quest       = "QuestID:",
-    talent      = "TalentID:",
-    achievement = "AchievementID:",
-	criteria = "CriteriaID:",
-    ability     = "AbilityID:",
+	spell		= "SpellID:",
+	item		= "ItemID:",
+	unit		= "NPC ID:",
+	quest		= "QuestID:",
+	talent		= "TalentID:",
+	achievement	= "AchievementID:",
+	criteria	= "CriteriaID:",
+	ability		= "AbilityID:",
 }
 
 local function addLine(tooltip, id, type)
@@ -156,6 +156,7 @@ end)
 -- Quests
 hooksecurefunc("SelectQuestLogEntry", function(self)
 local index = GetQuestLogSelection()
+	if QuestLogFrame:IsVisible() then
 	if not index then return end
 	local link = GetQuestLink(index)
 	if not link then return end
@@ -166,7 +167,8 @@ local index = GetQuestLogSelection()
 		GameTooltip:SetPoint("TOPLEFT", QuestLogScrollFrame, "TOPRIGHT", 0, 0)
 		addLine(GameTooltip, id, types.quest)
 		GameTooltip:Show()
-    f:HookScript("OnLeave", function()
-      GameTooltip:Hide()
-    end)
+		f:HookScript("OnLeave", function()
+			GameTooltip:Hide()
+		end)
+    end
 end)
