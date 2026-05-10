@@ -1,5 +1,5 @@
 # idTip
-idTip is a continuation of the addon known as SpellID in WotLK.
+**idTip** is a continuation of the addon known as SpellID in WotLK.
 
 ## Features  
 - Adds ID numbers to tooltips for spells, auras, items, NPCs, achievements, and quests.
