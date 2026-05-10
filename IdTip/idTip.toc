@@ -1,0 +1,7 @@
+## Interface: 30300
+## Title: idTip
+## Version: 2.01
+## Notes: Adds IDs to the various tooltips ingame
+## Author: Silverwind
+
+idTip.lua
