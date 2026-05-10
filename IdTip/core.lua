@@ -1,109 +1,82 @@
-local hooksecurefunc, select, UnitBuff, UnitDebuff, UnitAura, UnitGUID, GetGlyphSocketInfo, tonumber, strfind =
-      hooksecurefunc, select, UnitBuff, UnitDebuff, UnitAura, UnitGUID, GetGlyphSocketInfo, tonumber, strfind
+
+local hooksecurefunc, select, RAID_CLASS_COLORS, UnitIsUnit, UnitExists, UnitClass, UnitName, UnitAura, UnitGUID, GetGlyphSocketInfo, tonumber, strfind =
+      hooksecurefunc, select, RAID_CLASS_COLORS, UnitIsUnit, UnitExists, UnitClass, UnitName, UnitAura, UnitGUID, GetGlyphSocketInfo, tonumber, strfind
 
 local types = {
-	spell		= "SpellID:",
-	item		= "ItemID:",
+	spell		= "Spell ID:",
+	item		= "Item ID:",
 	unit		= "NPC ID:",
-	quest		= "QuestID:",
-	talent		= "TalentID:",
-	achievement	= "AchievementID:",
-	criteria	= "CriteriaID:",
-	ability		= "AbilityID:",
+	quest		= "Quest ID:",
+	talent		= "Talent ID:",
+	achievement	= "Achievement ID:",
+	criteria	= "Criteria ID:",
+	ability		= "Ability ID:",
 }
 
-local function addLine(tooltip, id, type, source)
-    local found = false
+local function addLine(tooltip, id, type)
+  -- Check if we already added to this tooltip. Happens on the talent frame
+  for i = 1, 15 do
+    local f = _G[tooltip:GetName() .. "TextLeft" .. i]
+    if f and f:GetText() == type then return end
+  end
 
-    -- Check if we already added to this tooltip. Happens on the talent frame
-    for i = 1,15 do
-        local frame = _G[tooltip:GetName() .. "TextLeft" .. i]
-        local text
-        if frame then text = frame:GetText() end
-        if text and text == type then found = true break end
-    end
-
-    if not found then
-      if source then
-        tooltip:AddDoubleLine(type.." |cffffffff" .. id, source)
-      else
-        tooltip:AddDoubleLine(type, "|cffffffff" .. id)
-      end
-        tooltip:Show()
-    end
+  tooltip:AddDoubleLine(type, "|cffffffff" .. id)
+  tooltip:Show()
 end
 
 -- All types, primarily for detached tooltips
 local function onSetHyperlink(self, link)
-    local type, id = string.match(link,"^(%a+):(%d+)")
-    if not type or not id then return end
-    if type == "spell" or type == "enchant" or type == "trade" then
-        addLine(self, id, types.spell)
-    elseif type == "talent" then
-        addLine(self, id, types.talent)
-    elseif type == "quest" then
-        addLine(self, id, types.quest)
-    elseif type == "achievement" then
-        addLine(self, id, types.achievement)
-    elseif type == "item" then
-        addLine(self, id, types.item)
-    end
+  local type, id = string.match(link,"^(%a+):(%d+)")
+  if not type or not id then return end
+  if type == "spell" or type == "enchant" or type == "trade" then
+      addLine(self, id, types.spell)
+  elseif type == "talent" then
+      addLine(self, id, types.talent)
+  elseif type == "quest" then
+      addLine(self, id, types.quest)
+  elseif type == "achievement" then
+      addLine(self, id, types.achievement)
+  elseif type == "item" then
+      addLine(self, id, types.item)
+  end
 end
 
 hooksecurefunc(ItemRefTooltip, "SetHyperlink", onSetHyperlink)
 hooksecurefunc(GameTooltip, "SetHyperlink", onSetHyperlink)
 
 -- Spells
-hooksecurefunc(GameTooltip, "SetUnitBuff", function(self, ...)
-    local caster, _, _, id = select(8, UnitAura(...))
-    if caster then
-		  local name = UnitName(caster)
-      if id then 
-        addLine(self, id, types.spell, name)
+local function handleAura(self, ...)
+  local _, rank, _, _, _, _, _, source, _, _, id = UnitAura(...)
+  if not id then return end
+  local leftText = "ID: |cffffffff"..id.."|r"..((rank and rank:match("%d+")) and " |cffaaaaaa("..rank..")|r" or "")
+  local rightText = ""
+  local r, g, b = 1, 0.82, 0
+  if source then
+    local owner = UnitIsUnit(source,"pet") and "player" or source:gsub("[pP][eE][tT]","")
+    if UnitExists(owner) then
+      local classColor = RAID_CLASS_COLORS[(select(2, UnitClass(owner)))]
+      if classColor then
+        r, g, b = classColor.r, classColor.g, classColor.b
       end
-		else
-      if id then 
-        addLine(self, id, types.spell)
-      end
-		end
-end)
-
-hooksecurefunc(GameTooltip, "SetUnitDebuff", function(self,...)
-  local caster, _, _, id = select(8, UnitAura(...))
-  if caster then
-    local name = UnitName(caster)
-    if id then 
-      addLine(self, id, types.spell, name)
-    end
-  else
-    if id then 
-      addLine(self, id, types.spell)
+      rightText = (owner==source and "%s" or "%s (%s)"):format(UnitName(owner), UnitName(source))
     end
   end
-end)
+  self:AddDoubleLine(leftText, rightText, 1,0.82,0, r,g,b)
+  self:Show()
+end
 
-hooksecurefunc(GameTooltip, "SetUnitAura", function(self,...)
-  local caster, _, _, id = select(8, UnitAura(...))
-  if caster then
-    local name = UnitName(caster)
-    if id then 
-      addLine(self, id, types.spell, name)
-    end
-  else
-    if id then 
-      addLine(self, id, types.spell)
-    end
-  end
-end)
+hooksecurefunc(GameTooltip, "SetUnitBuff", handleAura)
+hooksecurefunc(GameTooltip, "SetUnitDebuff", handleAura)
+hooksecurefunc(GameTooltip, "SetUnitAura", handleAura)
 
 hooksecurefunc("SetItemRef", function(link, ...)
-    local id = tonumber(link:match("spell:(%d+)"))
-    if id then addLine(ItemRefTooltip, id, types.spell) end
+  local id = tonumber(link:match("spell:(%d+)"))
+  if id then addLine(ItemRefTooltip, id, types.spell) end
 end)
 
 GameTooltip:HookScript("OnTooltipSetSpell", function(self)
-    local id = select(3, self:GetSpell())
-    if id then addLine(self, id, types.spell) end
+  local id = select(3, self:GetSpell())
+  if id then addLine(self, id, types.spell) end
 end)
 
 -- NPCs
@@ -148,17 +121,17 @@ f:RegisterEvent("ADDON_LOADED")
 f:SetScript("OnEvent", function(_, _, what)
 	if what == "Blizzard_AchievementUI" then
 		for i,button in ipairs(AchievementFrameAchievementsContainer.buttons) do
-			button:HookScript("OnEnter", function()
-			GameTooltip:SetOwner(button, "ANCHOR_NONE")
-			GameTooltip:SetPoint("TOPLEFT", button, "TOPRIGHT", 0, 0)
-			addLine(GameTooltip, button.id, types.achievement)
-			GameTooltip:Show()
-		end)
+      button:HookScript("OnEnter", function()
+        GameTooltip:SetOwner(button, "ANCHOR_NONE")
+        GameTooltip:SetPoint("TOPLEFT", button, "TOPRIGHT", 0, 0)
+        addLine(GameTooltip, button.id, types.achievement)
+        GameTooltip:Show()
+		  end)
 			button:HookScript("OnLeave", function()
-			GameTooltip:Hide()
-		end)
+			  GameTooltip:Hide()
+		  end)
 		
-		      local hooked = {}
+		  local hooked = {}
       hooksecurefunc("AchievementButton_GetCriteria", function(index, renderOffScreen)
         local frame = _G["AchievementFrameCriteria" .. (renderOffScreen and "OffScreen" or "") .. index]
         if frame and not hooked[frame] then
@@ -185,21 +158,15 @@ f:SetScript("OnEvent", function(_, _, what)
 end)
 
 -- Quests
-hooksecurefunc("SelectQuestLogEntry", function(self)
-local index = GetQuestLogSelection()
-	if QuestLogFrame:IsVisible() then
-	if not index then return end
-	local link = GetQuestLink(index)
-	if not link then return end
-
-	local id = tonumber(link:match(":(%d+):"))
-	local f = CreateFrame("frame")
-		GameTooltip:SetOwner(QuestLogScrollFrame, "ANCHOR_NONE");
-		GameTooltip:SetPoint("TOPLEFT", QuestLogScrollFrame, "TOPRIGHT", 0, 0)
-		addLine(GameTooltip, id, types.quest)
-		GameTooltip:Show()
-		f:HookScript("OnLeave", function()
-			GameTooltip:Hide()
-		end)
-    end
+hooksecurefunc("SelectQuestLogEntry", function()
+  if not (QuestLogFrame:IsVisible() and QuestLogHighlightFrame:IsMouseOver()) then return end
+  local index = GetQuestLogSelection()
+  if not index then return end
+  local link = GetQuestLink(index)
+  if not link then return end
+  local id = tonumber(link:match(":(%d+):"))
+  if not id then return end
+  GameTooltip:SetOwner(QuestLogScrollFrame, "ANCHOR_NONE")
+  GameTooltip:SetPoint("TOPLEFT", QuestLogScrollFrame, "TOPRIGHT", 0, 0)
+  addLine(GameTooltip, id, types.quest)
 end)
