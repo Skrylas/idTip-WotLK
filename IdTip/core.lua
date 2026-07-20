@@ -11,6 +11,7 @@ local types = {
 	achievement	= "Achievement ID:",
 	criteria	= "Criteria ID:",
 	ability		= "Ability ID:",
+	glyph		= "Glyph Spell ID:"
 }
 
 local function addLine(tooltip, id, type)
@@ -169,4 +170,17 @@ hooksecurefunc("SelectQuestLogEntry", function()
   GameTooltip:SetOwner(QuestLogScrollFrame, "ANCHOR_NONE")
   GameTooltip:SetPoint("TOPLEFT", QuestLogScrollFrame, "TOPRIGHT", 0, 0)
   addLine(GameTooltip, id, types.quest)
+end)
+
+hooksecurefunc(GameTooltip, "SetGlyph", function(self, glyphIndex)
+    local enabled, glyphType, spellID = GetGlyphSocketInfo(glyphIndex, 1)
+	if spellID then
+		if _G[GameTooltip:GetName().."TextLeft1"]:GetText() ~= GetSpellInfo(spellID) then --if spell name does not match, query glyph information from alternative spec
+			enabled, glyphType, spellID = GetGlyphSocketInfo(glyphIndex, 2)
+		end
+		
+		if spellID then
+			addLine(self, spellID, types.glyph)
+		end
+	end
 end)
